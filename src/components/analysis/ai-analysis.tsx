@@ -99,7 +99,7 @@ export function AIAnalysis({ symbol }: AIAnalysisProps) {
         {/* Streaming Output */}
         {(analysis || isLoading) && (
           <div className="pt-4 border-t border-border">
-            <div className="prose prose-sm dark:prose-invert max-w-none font-mono text-sm leading-relaxed prose-headings:font-mono prose-headings:font-bold prose-headings:text-foreground prose-headings:text-sm prose-headings:mt-4 prose-headings:mb-2 prose-p:text-muted-foreground prose-p:my-2 prose-strong:text-foreground prose-li:text-muted-foreground prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2">
+            <div className="prose">
               <ReactMarkdown>{analysis}</ReactMarkdown>
               {isLoading && (
                 <span className="inline-block w-2 h-4 bg-foreground animate-pulse ml-0.5" />
