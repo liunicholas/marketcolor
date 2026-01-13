@@ -90,10 +90,10 @@ export default function StockPage({ params }: StockPageProps) {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="thesis" className="mt-0">
+            <TabsContent value="thesis" forceMount className="mt-0 data-[state=inactive]:hidden">
               <ThesisTabs symbol={symbol.toUpperCase()} />
             </TabsContent>
-            <TabsContent value="ask" className="mt-0">
+            <TabsContent value="ask" forceMount className="mt-0 data-[state=inactive]:hidden">
               <AIAnalysis symbol={symbol.toUpperCase()} />
             </TabsContent>
           </Tabs>
