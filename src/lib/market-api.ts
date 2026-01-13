@@ -1,7 +1,9 @@
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 import type { StockQuote, StockHistory, MarketIndex, MarketMover, NewsItem, TimeRange } from '@/types/stock';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+const yahooFinance = new YahooFinance();
 
 export async function getStockQuote(symbol: string): Promise<StockQuote> {
   const quote = await yahooFinance.quote(symbol) as any;
