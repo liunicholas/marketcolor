@@ -1,7 +1,5 @@
 'use client';
 
-import { PriceBadge } from './price-badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { StockQuote } from '@/types/stock';
 
 interface StockHeaderProps {
@@ -12,17 +10,9 @@ interface StockHeaderProps {
 export function StockHeader({ quote, isLoading }: StockHeaderProps) {
   if (isLoading || !quote) {
     return (
-      <div className="animate-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          <div>
-            <Skeleton className="h-10 w-24 mb-2" />
-            <Skeleton className="h-5 w-48" />
-          </div>
-          <div className="flex items-end gap-4">
-            <Skeleton className="h-12 w-32" />
-            <Skeleton className="h-8 w-28" />
-          </div>
-        </div>
+      <div className="border border-border p-4">
+        <div className="h-8 w-24 bg-secondary animate-pulse mb-2" />
+        <div className="h-5 w-48 bg-secondary animate-pulse" />
       </div>
     );
   }
@@ -30,76 +20,41 @@ export function StockHeader({ quote, isLoading }: StockHeaderProps) {
   const isPositive = quote.change >= 0;
 
   return (
-    <div className="animate-fade-up">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        {/* Left: Symbol & Name */}
+    <div className="border border-border p-4">
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+        {/* Symbol & Name */}
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="font-mono-numbers text-4xl sm:text-5xl font-bold tracking-tight">
-              {quote.symbol}
-            </h1>
+          <div className="flex items-baseline gap-3">
+            <h1 className="font-mono text-2xl font-bold">{quote.symbol}</h1>
             {quote.exchange && (
-              <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">
+              <span className="font-mono text-xs text-muted-foreground">
                 {quote.exchange}
               </span>
             )}
           </div>
-          <p className="text-muted-foreground">{quote.name}</p>
+          <p className="text-sm text-muted-foreground">{quote.name}</p>
         </div>
 
-        {/* Right: Price & Change */}
-        <div className="flex items-end gap-4">
-          <div className="text-right sm:text-left">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-              Current Price
-            </p>
-            <p
-              className={`
-                font-mono-numbers text-4xl sm:text-5xl font-bold tracking-tight
-                ${isPositive ? 'text-gain' : 'text-loss'}
-              `}
-            >
-              ${quote.price.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </p>
-          </div>
-          <PriceBadge
-            change={quote.change}
-            changePercent={quote.changePercent}
-            size="lg"
-            className="mb-1"
-          />
+        {/* Price & Change */}
+        <div className="flex items-baseline gap-4 font-mono">
+          <span className="text-2xl font-bold">
+            ${quote.price.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+          <span className={isPositive ? 'text-gain' : 'text-loss'}>
+            {isPositive ? '▲' : '▼'} {isPositive ? '+' : ''}{quote.change.toFixed(2)} ({isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%)
+          </span>
         </div>
       </div>
 
-      {/* Trading Info Bar */}
-      <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <span>Open:</span>
-          <span className="font-mono-numbers font-medium text-foreground">
-            ${quote.open.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>High:</span>
-          <span className="font-mono-numbers font-medium text-gain">
-            ${quote.high.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>Low:</span>
-          <span className="font-mono-numbers font-medium text-loss">
-            ${quote.low.toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>Prev Close:</span>
-          <span className="font-mono-numbers font-medium text-foreground">
-            ${quote.previousClose.toFixed(2)}
-          </span>
-        </div>
+      {/* Day Stats */}
+      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs text-muted-foreground">
+        <span>Open: <span className="text-foreground">${quote.open.toFixed(2)}</span></span>
+        <span>High: <span className="text-gain">${quote.high.toFixed(2)}</span></span>
+        <span>Low: <span className="text-loss">${quote.low.toFixed(2)}</span></span>
+        <span>Close: <span className="text-foreground">${quote.price.toFixed(2)}</span></span>
       </div>
     </div>
   );

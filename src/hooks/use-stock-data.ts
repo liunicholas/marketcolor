@@ -35,19 +35,21 @@ export function useStockData(
   if (options?.includeProfile) params.set('profile', 'true');
   if (options?.includeNews) params.set('news', 'true');
 
-  const { data, error, isLoading, mutate } = useSWR<StockData>(
+  const { data, error, isLoading, isValidating, mutate } = useSWR<StockData>(
     symbol ? `/api/stock/${symbol}?${params}` : null,
     fetcher,
     {
       refreshInterval: 60000, // Refresh every minute
       revalidateOnFocus: true,
+      keepPreviousData: true, // Keep showing previous data while fetching new data
     }
   );
 
   return {
     data,
     error,
-    isLoading,
+    isLoading: isLoading && !data, // Only show loading on initial load, not on revalidation
+    isValidating, // True when fetching in background
     refresh: mutate,
   };
 }

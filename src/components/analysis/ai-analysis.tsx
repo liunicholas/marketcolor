@@ -1,13 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
-import { Sparkles, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
-import type { AIAnalysis as AIAnalysisType } from '@/types/stock';
 
 interface AIAnalysisProps {
   symbol: string;
@@ -15,13 +11,14 @@ interface AIAnalysisProps {
 
 export function AIAnalysis({ symbol }: AIAnalysisProps) {
   const [prompt, setPrompt] = useState('');
-  const [analysis, setAnalysis] = useState<AIAnalysisType | null>(null);
+  const [analysis, setAnalysis] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     setIsLoading(true);
     setError(null);
+    setAnalysis('');
 
     try {
       const response = await fetch('/api/analysis', {
@@ -34,8 +31,20 @@ export function AIAnalysis({ symbol }: AIAnalysisProps) {
         throw new Error('Failed to generate analysis');
       }
 
-      const data = await response.json();
-      setAnalysis(data);
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        setAnalysis(prev => prev + chunk);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -44,115 +53,67 @@ export function AIAnalysis({ symbol }: AIAnalysisProps) {
   };
 
   return (
-    <Card className="bg-card border-border/50 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          AI Analysis
-          <span className="text-xs font-normal text-muted-foreground ml-auto">
-            Powered by GPT-5 with Web Search
-          </span>
-        </CardTitle>
-      </CardHeader>
+    <div className="border border-border">
+      <div className="px-4 py-2 border-b border-border bg-secondary/30">
+        <span className="font-mono text-xs text-muted-foreground">ASK AI</span>
+      </div>
 
-      <CardContent className="space-y-4">
-        {/* Input Section */}
-        <div className="space-y-3">
-          <Textarea
-            placeholder="Ask anything about this stock... (e.g., 'What are the growth prospects?' or 'Summarize recent news')"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[80px] bg-secondary/30 border-border/50 resize-none focus:border-cyan-500/50"
-          />
+      <div className="p-4 space-y-4">
+        {/* Input */}
+        <Textarea
+          placeholder="Ask about this stock..."
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          className="min-h-[60px] font-mono text-sm bg-background border-border resize-none"
+        />
 
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleAnalyze}
+            disabled={isLoading}
+            variant="outline"
+            className="font-mono text-xs h-8"
+          >
+            {isLoading ? 'ANALYZING...' : 'ANALYZE'}
+          </Button>
+
+          {analysis && !isLoading && (
             <Button
+              variant="ghost"
+              size="sm"
               onClick={handleAnalyze}
-              disabled={isLoading}
-              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-lg shadow-violet-500/25"
+              className="font-mono text-xs h-8"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Analysis
-                </>
-              )}
+              REFRESH
             </Button>
-
-            {analysis && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleAnalyze}
-                disabled={isLoading}
-                className="border-border/50"
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Error Message */}
+        {/* Error */}
         {error && (
-          <div className="p-4 rounded-lg bg-loss/10 border border-loss/20 text-loss text-sm">
-            {error}
+          <div className="p-3 border border-loss bg-loss/10 text-loss text-sm font-mono">
+            ERROR: {error}
           </div>
         )}
 
-        {/* Loading Skeleton */}
-        {isLoading && !analysis && (
-          <div className="space-y-3 pt-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-4/6" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-        )}
-
-        {/* Analysis Output */}
-        {analysis && (
-          <div className="pt-4 border-t border-border/50">
-            <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground">
-              <ReactMarkdown>{analysis.analysis}</ReactMarkdown>
+        {/* Streaming Output */}
+        {(analysis || isLoading) && (
+          <div className="pt-4 border-t border-border">
+            <div className="prose prose-sm dark:prose-invert max-w-none font-mono text-sm leading-relaxed prose-headings:font-mono prose-headings:font-bold prose-headings:text-foreground prose-headings:text-sm prose-headings:mt-4 prose-headings:mb-2 prose-p:text-muted-foreground prose-p:my-2 prose-strong:text-foreground prose-li:text-muted-foreground prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2">
+              <ReactMarkdown>{analysis}</ReactMarkdown>
+              {isLoading && (
+                <span className="inline-block w-2 h-4 bg-foreground animate-pulse ml-0.5" />
+              )}
             </div>
 
-            {/* Citations */}
-            {analysis.citations && analysis.citations.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-border/50">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Sources</p>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.citations.slice(0, 5).map((citation, index) => (
-                    <a
-                      key={index}
-                      href={citation.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-cyan-500 hover:text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded-md transition-colors"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      {citation.title || `Source ${index + 1}`}
-                    </a>
-                  ))}
-                </div>
-              </div>
+            {!isLoading && analysis && (
+              <p className="mt-4 font-mono text-xs text-muted-foreground">
+                {new Date().toLocaleString()}
+              </p>
             )}
-
-            {/* Timestamp */}
-            <p className="mt-4 text-xs text-muted-foreground/60">
-              Generated {new Date(analysis.generatedAt).toLocaleString()}
-            </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

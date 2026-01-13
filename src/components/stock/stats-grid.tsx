@@ -1,7 +1,5 @@
 'use client';
 
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { StockQuote } from '@/types/stock';
 
 interface StatsGridProps {
@@ -24,15 +22,15 @@ interface StatsGridProps {
 
 function formatLargeNumber(num: number | undefined): string {
   if (num === undefined || num === null) return '-';
-  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+  if (num >= 1e12) return `$${(num / 1e12).toFixed(1)}T`;
+  if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
+  if (num >= 1e6) return `$${(num / 1e6).toFixed(1)}M`;
   return `$${num.toLocaleString()}`;
 }
 
 function formatPercent(num: number | undefined): string {
   if (num === undefined || num === null) return '-';
-  return `${(num * 100).toFixed(2)}%`;
+  return `${(num * 100).toFixed(1)}%`;
 }
 
 function formatNumber(num: number | undefined, decimals = 2): string {
@@ -40,110 +38,130 @@ function formatNumber(num: number | undefined, decimals = 2): string {
   return num.toFixed(decimals);
 }
 
+function formatVolume(num: number | undefined): string {
+  if (num === undefined || num === null) return '-';
+  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+  if (num >= 1e3) return `${(num / 1e3).toFixed(0)}K`;
+  return num.toLocaleString();
+}
+
 export function StatsGrid({ quote, profile, isLoading }: StatsGridProps) {
-  const stats = [
-    { label: 'Market Cap', value: formatLargeNumber(quote?.marketCap) },
-    { label: 'P/E Ratio', value: formatNumber(quote?.peRatio) },
-    { label: 'Forward P/E', value: formatNumber(quote?.forwardPE) },
-    { label: 'Volume', value: quote?.volume?.toLocaleString() || '-' },
-    { label: 'Avg Volume', value: quote?.avgVolume?.toLocaleString() || '-' },
-    { label: 'Div Yield', value: quote?.dividendYield ? formatPercent(quote.dividendYield / 100) : '-' },
-    { label: '52W High', value: quote?.fiftyTwoWeekHigh ? `$${quote.fiftyTwoWeekHigh.toFixed(2)}` : '-' },
-    { label: '52W Low', value: quote?.fiftyTwoWeekLow ? `$${quote.fiftyTwoWeekLow.toFixed(2)}` : '-' },
-  ];
-
-  const profileStats = profile ? [
-    { label: 'Sector', value: profile.sector || '-' },
-    { label: 'Industry', value: profile.industry || '-' },
-    { label: 'Revenue', value: formatLargeNumber(profile.revenue) },
-    { label: 'Rev Growth', value: formatPercent(profile.revenueGrowth) },
-    { label: 'Profit Margin', value: formatPercent(profile.profitMargin) },
-    { label: 'Op Margin', value: formatPercent(profile.operatingMargin) },
-    { label: 'ROE', value: formatPercent(profile.returnOnEquity) },
-    { label: 'ROA', value: formatPercent(profile.returnOnAssets) },
-  ] : [];
-
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="p-3 bg-card border-border/50">
-            <Skeleton className="h-3 w-16 mb-2" />
-            <Skeleton className="h-5 w-20" />
-          </Card>
-        ))}
+      <div className="border border-border p-3">
+        <div className="grid grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i}>
+              <div className="h-3 w-12 bg-secondary animate-pulse mb-1" />
+              <div className="h-4 w-16 bg-secondary animate-pulse" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Key Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {stats.map((stat, i) => (
-          <Card
-            key={stat.label}
-            className={`
-              p-3 bg-card border-border/50 animate-fade-up
-            `}
-            style={{ animationDelay: `${i * 0.03}s` }}
-          >
-            <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-            <p className="font-mono-numbers font-semibold text-sm truncate">
-              {stat.value}
-            </p>
-          </Card>
-        ))}
+    <div className="space-y-3">
+      {/* Key Stats - Compact Grid */}
+      <div className="border border-border">
+        <div className="px-3 py-1.5 border-b border-border bg-secondary/30">
+          <span className="font-mono text-xs text-muted-foreground">STATS</span>
+        </div>
+        <div className="grid grid-cols-4 gap-x-4 gap-y-2 p-3 font-mono text-xs">
+          <div>
+            <span className="text-muted-foreground block">Mkt Cap</span>
+            <span>{formatLargeNumber(quote?.marketCap)}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">P/E</span>
+            <span>{formatNumber(quote?.peRatio)}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">Fwd P/E</span>
+            <span>{formatNumber(quote?.forwardPE)}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">Div Yield</span>
+            <span>{quote?.dividendYield ? formatPercent(quote.dividendYield / 100) : '-'}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">Volume</span>
+            <span>{formatVolume(quote?.volume)}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">Avg Vol</span>
+            <span>{formatVolume(quote?.avgVolume)}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">52W High</span>
+            <span className="text-gain">{quote?.fiftyTwoWeekHigh ? `$${quote.fiftyTwoWeekHigh.toFixed(2)}` : '-'}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">52W Low</span>
+            <span className="text-loss">{quote?.fiftyTwoWeekLow ? `$${quote.fiftyTwoWeekLow.toFixed(2)}` : '-'}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Profile Stats */}
-      {profileStats.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {profileStats.map((stat, i) => (
-            <Card
-              key={stat.label}
-              className={`
-                p-3 bg-card border-border/50 animate-fade-up
-              `}
-              style={{ animationDelay: `${(i + 8) * 0.03}s` }}
-            >
-              <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-              <p className="font-mono-numbers font-semibold text-sm truncate">
-                {stat.value}
-              </p>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Analyst Rating */}
-      {profile?.recommendationKey && (
-        <Card className="p-4 bg-card border-border/50 animate-fade-up" style={{ animationDelay: '0.5s' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Analyst Rating</p>
-              <p className="font-semibold capitalize">
-                {profile.recommendationKey.replace('_', ' ')}
-              </p>
-            </div>
-            {profile.targetMeanPrice && (
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground mb-1">Price Target</p>
-                <p className="font-mono-numbers font-semibold text-cyan-500">
-                  ${profile.targetMeanPrice.toFixed(2)}
-                </p>
+      {/* Fundamentals - Compact Grid */}
+      {profile && (
+        <div className="border border-border">
+          <div className="px-3 py-1.5 border-b border-border bg-secondary/30">
+            <span className="font-mono text-xs text-muted-foreground">FUNDAMENTALS</span>
+          </div>
+          <div className="grid grid-cols-4 gap-x-4 gap-y-2 p-3 font-mono text-xs">
+            {profile.sector && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground block">Sector</span>
+                <span className="truncate block">{profile.sector}</span>
               </div>
             )}
-            {profile.numberOfAnalysts && (
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground mb-1">Analysts</p>
-                <p className="font-mono-numbers font-semibold">
-                  {profile.numberOfAnalysts}
-                </p>
+            {profile.industry && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground block">Industry</span>
+                <span className="truncate block">{profile.industry}</span>
               </div>
+            )}
+            <div>
+              <span className="text-muted-foreground block">Revenue</span>
+              <span>{formatLargeNumber(profile.revenue)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">Rev Grth</span>
+              <span>{formatPercent(profile.revenueGrowth)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">Profit Mgn</span>
+              <span>{formatPercent(profile.profitMargin)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">Op Mgn</span>
+              <span>{formatPercent(profile.operatingMargin)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">ROE</span>
+              <span>{formatPercent(profile.returnOnEquity)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">ROA</span>
+              <span>{formatPercent(profile.returnOnAssets)}</span>
+            </div>
+            {profile.recommendationKey && (
+              <>
+                <div>
+                  <span className="text-muted-foreground block">Rating</span>
+                  <span className="uppercase">{profile.recommendationKey.replace('_', ' ')}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">Target</span>
+                  <span>{profile.targetMeanPrice ? `$${profile.targetMeanPrice.toFixed(2)}` : '-'}</span>
+                </div>
+              </>
             )}
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

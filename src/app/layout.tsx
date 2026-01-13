@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     template: '%s | MarketColor',
-    default: 'MarketColor - AI-Powered Stock Research',
+    default: 'MarketColor',
   },
   description:
     'Free stock research platform with AI-powered analysis, real-time quotes, and professional charts. Get comprehensive market insights powered by GPT-5.',
@@ -31,17 +31,20 @@ export const metadata: Metadata = {
     'financial analysis',
   ],
   authors: [{ name: 'MarketColor' }],
+  icons: {
+    icon: '/favicon.svg',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
     siteName: 'MarketColor',
-    title: 'MarketColor - AI-Powered Stock Research',
+    title: 'MarketColor',
     description:
       'Free stock research platform with AI-powered analysis, real-time quotes, and professional charts.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MarketColor - AI-Powered Stock Research',
+    title: 'MarketColor',
     description:
       'Free stock research platform with AI-powered analysis, real-time quotes, and professional charts.',
   },

@@ -2,143 +2,108 @@
 
 import Link from 'next/link';
 import { useMarketMovers } from '@/hooks/use-market-data';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { PriceBadge } from '@/components/stock/price-badge';
-import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 
 interface MoversTableProps {
   type: 'gainers' | 'losers' | 'active';
   limit?: number;
+  offset?: number;
 }
 
-export function MoversTable({ type, limit = 10 }: MoversTableProps) {
-  const { movers, isLoading, error } = useMarketMovers(type);
+function formatVolume(num: number | undefined): string {
+  if (num === undefined || num === null) return '-';
+  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+  if (num >= 1e3) return `${(num / 1e3).toFixed(0)}K`;
+  return num.toLocaleString();
+}
+
+export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) {
+  const { movers, isLoading, error } = useMarketMovers(type, offset, limit);
+  const isActive = type === 'active';
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <p className="text-sm">Failed to load market movers</p>
+      <div className="border border-border p-4">
+        <p className="text-sm text-muted-foreground font-mono">ERROR: Failed to load</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="border border-border">
         {Array.from({ length: limit }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-card/50">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-8 w-8 rounded-md" />
-              <div>
-                <Skeleton className="h-4 w-16 mb-1" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-            </div>
-            <Skeleton className="h-6 w-20" />
+          <div key={i} className="flex items-center justify-between px-4 py-2 border-b border-border last:border-b-0">
+            <div className="h-4 w-16 bg-secondary animate-pulse" />
+            <div className="h-4 w-32 bg-secondary animate-pulse" />
           </div>
         ))}
       </div>
     );
   }
 
-  const displayMovers = movers.slice(0, limit);
+  const displayMovers = movers;
 
   return (
-    <div className="rounded-lg border border-border/50 overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-card/50 hover:bg-card/50">
-            <TableHead className="font-semibold">Symbol</TableHead>
-            <TableHead className="font-semibold hidden sm:table-cell">Company</TableHead>
-            <TableHead className="text-right font-semibold">Price</TableHead>
-            <TableHead className="text-right font-semibold">Change</TableHead>
-            <TableHead className="w-10"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {displayMovers.map((stock, index) => {
-            const isPositive = stock.change >= 0;
-            return (
-              <TableRow
-                key={stock.symbol}
-                className={`
-                  group cursor-pointer transition-colors
-                  hover:bg-secondary/50 animate-fade-up
-                `}
-                style={{ animationDelay: `${index * 0.03}s` }}
-              >
-                <TableCell>
-                  <Link
-                    href={`/stock/${stock.symbol}`}
-                    className="flex items-center gap-3"
-                  >
-                    <div
-                      className={`
-                        flex h-8 w-8 items-center justify-center rounded-md
-                        transition-colors
-                        ${isPositive
-                          ? 'bg-gain/10 text-gain'
-                          : 'bg-loss/10 text-loss'
-                        }
-                      `}
-                    >
-                      {isPositive ? (
-                        <TrendingUp className="h-4 w-4" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4" />
-                      )}
-                    </div>
-                    <span className="font-mono-numbers font-semibold">
-                      {stock.symbol}
-                    </span>
-                  </Link>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  <Link
-                    href={`/stock/${stock.symbol}`}
-                    className="text-sm text-muted-foreground line-clamp-1 hover:text-foreground transition-colors"
-                  >
-                    {stock.name}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Link
-                    href={`/stock/${stock.symbol}`}
-                    className="font-mono-numbers font-medium"
-                  >
-                    ${stock.price.toFixed(2)}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Link href={`/stock/${stock.symbol}`}>
-                    <PriceBadge
-                      change={stock.change}
-                      changePercent={stock.changePercent}
-                      size="sm"
-                    />
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/stock/${stock.symbol}`}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+    <div className="border border-border">
+      {/* Header */}
+      <div className="flex items-center px-4 py-2 border-b border-border bg-secondary/30 font-mono text-xs text-muted-foreground">
+        <span className="w-16">SYM</span>
+        <span className="flex-1 hidden sm:block">NAME</span>
+        {isActive ? (
+          <>
+            <span className="w-24 text-right">VOLUME</span>
+            <span className="w-20 text-right">PRICE</span>
+            <span className="w-20 text-right">CHG %</span>
+          </>
+        ) : (
+          <>
+            <span className="w-24 text-right">PRICE</span>
+            <span className="w-24 text-right">CHG</span>
+            <span className="w-20 text-right">%</span>
+          </>
+        )}
+      </div>
+
+      {/* Rows */}
+      {displayMovers.map((stock) => {
+        const isPositive = stock.change >= 0;
+        return (
+          <Link
+            key={stock.symbol}
+            href={`/stock/${stock.symbol}`}
+            className="flex items-center px-4 py-2 border-b border-border last:border-b-0 hover:bg-secondary/30 font-mono text-sm"
+          >
+            <span className="w-16 font-bold">{stock.symbol}</span>
+            <span className="flex-1 hidden sm:block text-muted-foreground truncate pr-4">
+              {stock.name}
+            </span>
+            {isActive ? (
+              <>
+                <span className="w-24 text-right font-bold text-foreground">
+                  {formatVolume(stock.volume)}
+                </span>
+                <span className="w-20 text-right text-muted-foreground">
+                  ${stock.price.toFixed(2)}
+                </span>
+                <span className={`w-20 text-right ${isPositive ? 'text-gain' : 'text-loss'}`}>
+                  {isPositive ? '+' : ''}{stock.changePercent.toFixed(1)}%
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="w-24 text-right">${stock.price.toFixed(2)}</span>
+                <span className={`w-24 text-right ${isPositive ? 'text-gain' : 'text-loss'}`}>
+                  {isPositive ? '+' : ''}{stock.change.toFixed(2)}
+                </span>
+                <span className={`w-20 text-right ${isPositive ? 'text-gain' : 'text-loss'}`}>
+                  {isPositive ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
+                </span>
+              </>
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 }

@@ -11,7 +11,6 @@ import { NewsFeed } from '@/components/news/news-feed';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { TimeRange } from '@/types/stock';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 interface StockPageProps {
@@ -22,7 +21,7 @@ export default function StockPage({ params }: StockPageProps) {
   const { symbol } = use(params);
   const [range, setRange] = useState<TimeRange>('1M');
 
-  const { data, isLoading, error } = useStockData(symbol.toUpperCase(), range, {
+  const { data, isLoading, isValidating, error } = useStockData(symbol.toUpperCase(), range, {
     includeProfile: true,
     includeNews: true,
   });
@@ -30,15 +29,11 @@ export default function StockPage({ params }: StockPageProps) {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-20">
-          <h1 className="text-4xl font-bold mb-4">Stock Not Found</h1>
-          <p className="text-muted-foreground mb-6">
-            Could not find data for symbol &quot;{symbol.toUpperCase()}&quot;
-          </p>
+        <div className="border border-border p-8 text-center">
+          <p className="font-mono text-lg mb-4">NOT FOUND: {symbol.toUpperCase()}</p>
           <Link href="/">
-            <Button>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
+            <Button variant="outline" className="font-mono text-xs">
+              BACK
             </Button>
           </Link>
         </div>
@@ -48,88 +43,88 @@ export default function StockPage({ params }: StockPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      {/* Back Button */}
-      <div className="mb-6">
+      {/* Back */}
+      <div className="mb-4">
         <Link href="/">
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+          <Button variant="ghost" size="sm" className="font-mono text-xs h-7 px-2">
+            BACK
           </Button>
         </Link>
       </div>
 
-      {/* Stock Header */}
+      {/* Header */}
       <StockHeader quote={data?.quote || null} isLoading={isLoading} />
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        {/* Left Column - Chart & Analysis */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Chart */}
+      {/* Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        {/* Left - Chart & Analysis */}
+        <div className="lg:col-span-2 space-y-4">
           <StockChart
             history={data?.history || []}
             isLoading={isLoading}
+            isValidating={isValidating}
             range={range}
             onRangeChange={setRange}
           />
 
-          {/* Stats Grid */}
           <StatsGrid
             quote={data?.quote || null}
             profile={data?.profile}
             isLoading={isLoading}
           />
 
-          {/* AI Analysis Tabs */}
-          <Tabs defaultValue="analysis" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-secondary/50 mb-4">
-              <TabsTrigger
-                value="analysis"
-                className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
-              >
-                AI Analysis
-              </TabsTrigger>
+          {/* AI Tabs */}
+          <Tabs defaultValue="thesis" className="w-full">
+            <TabsList className="w-full max-w-xs grid grid-cols-2 h-8 p-0 bg-transparent border border-border mb-4">
               <TabsTrigger
                 value="thesis"
-                className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400"
+                className="font-mono text-xs h-full rounded-none data-[state=active]:bg-secondary border-r border-border"
               >
-                Investment Thesis
+                THESIS
+              </TabsTrigger>
+              <TabsTrigger
+                value="ask"
+                className="font-mono text-xs h-full rounded-none data-[state=active]:bg-secondary"
+              >
+                ASK AI
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="analysis">
-              <AIAnalysis symbol={symbol.toUpperCase()} />
-            </TabsContent>
-            <TabsContent value="thesis">
+            <TabsContent value="thesis" className="mt-0">
               <ThesisTabs symbol={symbol.toUpperCase()} />
+            </TabsContent>
+            <TabsContent value="ask" className="mt-0">
+              <AIAnalysis symbol={symbol.toUpperCase()} />
             </TabsContent>
           </Tabs>
         </div>
 
-        {/* Right Column - News & Info */}
-        <div className="space-y-6">
-          {/* Company Description */}
+        {/* Right - Info & News */}
+        <div className="space-y-4">
+          {/* About */}
           {data?.profile?.description && (
-            <div className="p-4 rounded-lg bg-card border border-border/50 animate-fade-up">
-              <h3 className="font-semibold mb-2">About {data.quote?.name}</h3>
-              <p className="text-sm text-muted-foreground line-clamp-6">
-                {data.profile.description}
-              </p>
-              {data.profile.website && (
-                <a
-                  href={data.profile.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-cyan-500 hover:text-cyan-400 mt-3"
-                >
-                  Visit Website
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+            <div className="border border-border">
+              <div className="px-4 py-2 border-b border-border bg-secondary/30">
+                <span className="font-mono text-xs text-muted-foreground">ABOUT</span>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground line-clamp-6">
+                  {data.profile.description}
+                </p>
+                {data.profile.website && (
+                  <a
+                    href={data.profile.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block mt-3 font-mono text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {data.profile.website}
+                  </a>
+                )}
+              </div>
             </div>
           )}
 
-          {/* News Feed */}
           <NewsFeed news={data?.news || null} isLoading={isLoading} />
         </div>
       </div>

@@ -149,7 +149,7 @@ export async function getMarketIndices(): Promise<MarketIndex[]> {
   }));
 }
 
-export async function getMarketMovers(type: 'gainers' | 'losers' | 'active'): Promise<MarketMover[]> {
+export async function getMarketMovers(type: 'gainers' | 'losers' | 'active', offset = 0, limit = 20): Promise<MarketMover[]> {
   const screenerId = type === 'gainers'
     ? 'day_gainers'
     : type === 'losers'
@@ -157,21 +157,24 @@ export async function getMarketMovers(type: 'gainers' | 'losers' | 'active'): Pr
       : 'most_actives';
 
   try {
+    // Fetch enough items to cover offset + limit
     const result = await yahooFinance.screener({
       scrIds: screenerId,
-      count: 20,
+      count: offset + limit + 10, // Fetch extra to ensure we have enough
     }) as any;
 
     if (!result.quotes) return [];
 
-    return result.quotes.slice(0, 20).map((quote: any) => ({
-      symbol: quote.symbol || '',
-      name: quote.shortName || quote.longName || quote.symbol || '',
-      price: quote.regularMarketPrice || 0,
-      change: quote.regularMarketChange || 0,
-      changePercent: quote.regularMarketChangePercent || 0,
-      volume: quote.regularMarketVolume,
-    }));
+    return result.quotes
+      .slice(offset, offset + limit)
+      .map((quote: any) => ({
+        symbol: quote.symbol || '',
+        name: quote.shortName || quote.longName || quote.symbol || '',
+        price: quote.regularMarketPrice || 0,
+        change: quote.regularMarketChange || 0,
+        changePercent: quote.regularMarketChangePercent || 0,
+        volume: quote.regularMarketVolume,
+      }));
   } catch {
     return [];
   }
@@ -187,9 +190,8 @@ export async function getCompanyNews(symbol: string): Promise<NewsItem[]> {
       title: item.title,
       link: item.link,
       publisher: item.publisher || 'Unknown',
-      publishedAt: item.providerPublishTime
-        ? new Date(item.providerPublishTime * 1000).toISOString()
-        : new Date().toISOString(),
+      // providerPublishTime is already an ISO date string from yahoo-finance2
+      publishedAt: item.providerPublishTime || new Date().toISOString(),
       thumbnail: item.thumbnail?.resolutions?.[0]?.url,
     }));
   } catch {
@@ -210,6 +212,102 @@ export async function searchStocks(query: string): Promise<{ symbol: string; nam
         symbol: q.symbol,
         name: q.shortname || q.longname || q.symbol,
       }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getFutures(): Promise<MarketIndex[]> {
+  const symbols = [
+    { symbol: 'ES=F', name: 'S&P 500 Futures' },
+    { symbol: 'NQ=F', name: 'NASDAQ Futures' },
+    { symbol: 'YM=F', name: 'Dow Futures' },
+    { symbol: 'RTY=F', name: 'Russell Futures' },
+  ];
+
+  try {
+    const quotes = await yahooFinance.quote(symbols.map(s => s.symbol)) as any[];
+
+    return quotes.map((quote: any, index: number) => ({
+      symbol: symbols[index].symbol,
+      name: symbols[index].name,
+      price: quote.regularMarketPrice || 0,
+      change: quote.regularMarketChange || 0,
+      changePercent: quote.regularMarketChangePercent || 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getSectorETFs(): Promise<MarketIndex[]> {
+  const symbols = [
+    { symbol: 'XLK', name: 'Technology (XLK)' },
+    { symbol: 'XLF', name: 'Financials (XLF)' },
+    { symbol: 'XLE', name: 'Energy (XLE)' },
+    { symbol: 'XLV', name: 'Healthcare (XLV)' },
+    { symbol: 'XLY', name: 'Consumer Disc. (XLY)' },
+    { symbol: 'XLP', name: 'Consumer Staples (XLP)' },
+    { symbol: 'XLI', name: 'Industrials (XLI)' },
+    { symbol: 'XLU', name: 'Utilities (XLU)' },
+  ];
+
+  try {
+    const quotes = await yahooFinance.quote(symbols.map(s => s.symbol)) as any[];
+
+    return quotes.map((quote: any, index: number) => ({
+      symbol: symbols[index].symbol,
+      name: symbols[index].name,
+      price: quote.regularMarketPrice || 0,
+      change: quote.regularMarketChange || 0,
+      changePercent: quote.regularMarketChangePercent || 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getCommodities(): Promise<MarketIndex[]> {
+  const symbols = [
+    { symbol: 'GC=F', name: 'Gold (GC=F)' },
+    { symbol: 'CL=F', name: 'Crude Oil (CL=F)' },
+    { symbol: 'NG=F', name: 'Natural Gas (NG=F)' },
+    { symbol: 'SI=F', name: 'Silver (SI=F)' },
+  ];
+
+  try {
+    const quotes = await yahooFinance.quote(symbols.map(s => s.symbol)) as any[];
+
+    return quotes.map((quote: any, index: number) => ({
+      symbol: symbols[index].symbol,
+      name: symbols[index].name,
+      price: quote.regularMarketPrice || 0,
+      change: quote.regularMarketChange || 0,
+      changePercent: quote.regularMarketChangePercent || 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getCurrencies(): Promise<MarketIndex[]> {
+  const symbols = [
+    { symbol: 'EURUSD=X', name: 'EUR/USD' },
+    { symbol: 'GBPUSD=X', name: 'GBP/USD' },
+    { symbol: 'USDJPY=X', name: 'USD/JPY' },
+    { symbol: 'AUDUSD=X', name: 'AUD/USD' },
+  ];
+
+  try {
+    const quotes = await yahooFinance.quote(symbols.map(s => s.symbol)) as any[];
+
+    return quotes.map((quote: any, index: number) => ({
+      symbol: symbols[index].symbol,
+      name: symbols[index].name,
+      price: quote.regularMarketPrice || 0,
+      change: quote.regularMarketChange || 0,
+      changePercent: quote.regularMarketChangePercent || 0,
+    }));
   } catch {
     return [];
   }
