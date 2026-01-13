@@ -86,19 +86,6 @@ export function ThesisTabs({ symbol }: ThesisTabsProps) {
 
         {(thesis || isLoading) && (
           <div className="space-y-4">
-            {thesis && !isLoading && (
-              <div className="flex items-center justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGenerate}
-                  className="font-mono text-xs h-7"
-                >
-                  REGENERATE
-                </Button>
-              </div>
-            )}
-
             <div className="prose">
               <ReactMarkdown>{thesis}</ReactMarkdown>
               {isLoading && (

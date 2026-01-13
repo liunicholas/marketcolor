@@ -67,27 +67,14 @@ export function AIAnalysis({ symbol }: AIAnalysisProps) {
           className="min-h-[60px] font-mono text-sm bg-background border-border resize-none"
         />
 
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleAnalyze}
-            disabled={isLoading}
-            variant="outline"
-            className="font-mono text-xs h-8"
-          >
-            {isLoading ? 'ANALYZING...' : 'ANALYZE'}
-          </Button>
-
-          {analysis && !isLoading && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAnalyze}
-              className="font-mono text-xs h-8"
-            >
-              REFRESH
-            </Button>
-          )}
-        </div>
+        <Button
+          onClick={handleAnalyze}
+          disabled={isLoading}
+          variant="outline"
+          className="font-mono text-xs h-8"
+        >
+          {isLoading ? 'ANALYZING...' : 'ANALYZE'}
+        </Button>
 
         {/* Error */}
         {error && (
