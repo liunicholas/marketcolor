@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { generateInvestmentThesisStream } from '@/lib/openai';
-import { getStockQuote, getStockProfile, getCompanyNews } from '@/lib/market-api';
+import { getStockQuote, getStockProfile } from '@/lib/market-api';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,16 +21,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch stock data for context
-    const [quote, profile, news] = await Promise.all([
+    const [quote, profile] = await Promise.all([
       getStockQuote(symbol.toUpperCase()),
       getStockProfile(symbol.toUpperCase()),
-      getCompanyNews(symbol.toUpperCase()),
     ]);
 
     const stream = await generateInvestmentThesisStream(symbol.toUpperCase(), {
       quote: quote as unknown as Record<string, unknown>,
       profile: profile as unknown as Record<string, unknown>,
-      news,
     });
 
     const encoder = new TextEncoder();

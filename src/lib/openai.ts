@@ -34,7 +34,6 @@ Format your response in clear markdown.
 export function generateInvestmentThesisStream(symbol: string, stockData: {
   quote: Record<string, unknown>;
   profile?: Record<string, unknown>;
-  news?: Array<{ title: string }>;
 }) {
   return openai.responses.create({
     model: 'gpt-5',
@@ -45,7 +44,6 @@ You are an expert financial analyst. Create a comprehensive investment thesis fo
 
 Company data: ${JSON.stringify(stockData.quote)}
 Profile: ${JSON.stringify(stockData.profile || {})}
-Recent headlines: ${stockData.news?.map(n => n.title).join('; ') || 'Search for recent news'}
 
 Provide a complete investment thesis covering:
 
