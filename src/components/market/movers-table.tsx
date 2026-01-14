@@ -21,6 +21,14 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
   const { movers, isLoading, error } = useMarketMovers(type, offset, limit);
   const isActive = type === 'active';
 
+  // Calculate max values for bar scaling
+  const maxPercent = movers.length > 0
+    ? Math.max(...movers.map((m) => Math.abs(m.changePercent)))
+    : 1;
+  const maxVolume = movers.length > 0
+    ? Math.max(...movers.map((m) => m.volume || 0))
+    : 1;
+
   if (error) {
     return (
       <div className="border border-border p-4">
@@ -52,15 +60,14 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
         <span className="flex-1 hidden sm:block">NAME</span>
         {isActive ? (
           <>
-            <span className="w-24 text-right">VOLUME</span>
+            <span className="w-28 text-right">VOLUME</span>
             <span className="w-20 text-right">PRICE</span>
             <span className="w-20 text-right">CHG %</span>
           </>
         ) : (
           <>
-            <span className="w-24 text-right">PRICE</span>
-            <span className="w-24 text-right">CHG</span>
-            <span className="w-20 text-right">%</span>
+            <span className="w-20 text-right">PRICE</span>
+            <span className="w-32 text-right">CHANGE</span>
           </>
         )}
       </div>
@@ -68,6 +75,9 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
       {/* Rows */}
       {displayMovers.map((stock) => {
         const isPositive = stock.change >= 0;
+        const percentWidth = (Math.abs(stock.changePercent) / maxPercent) * 100;
+        const volumeWidth = ((stock.volume || 0) / maxVolume) * 100;
+
         return (
           <Link
             key={stock.symbol}
@@ -80,8 +90,15 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
             </span>
             {isActive ? (
               <>
-                <span className="w-24 text-right font-bold text-foreground">
-                  {formatVolume(stock.volume)}
+                {/* Volume with bar */}
+                <span className="w-28 text-right relative">
+                  <span
+                    className="absolute inset-y-0 right-0 bg-muted-foreground/20"
+                    style={{ width: `${volumeWidth}%` }}
+                  />
+                  <span className="relative font-bold text-foreground">
+                    {formatVolume(stock.volume)}
+                  </span>
                 </span>
                 <span className="w-20 text-right text-muted-foreground">
                   ${stock.price.toFixed(2)}
@@ -92,12 +109,18 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
               </>
             ) : (
               <>
-                <span className="w-24 text-right">${stock.price.toFixed(2)}</span>
-                <span className={`w-24 text-right ${isPositive ? 'text-gain' : 'text-loss'}`}>
-                  {isPositive ? '+' : ''}{stock.change.toFixed(2)}
-                </span>
-                <span className={`w-20 text-right ${isPositive ? 'text-gain' : 'text-loss'}`}>
-                  {isPositive ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
+                <span className="w-20 text-right">${stock.price.toFixed(2)}</span>
+                {/* Percentage with bar */}
+                <span className="w-32 text-right relative">
+                  <span
+                    className={`absolute inset-y-0 right-0 ${
+                      type === 'gainers' ? 'bg-gain/20' : 'bg-loss/20'
+                    }`}
+                    style={{ width: `${percentWidth}%` }}
+                  />
+                  <span className={`relative ${isPositive ? 'text-gain' : 'text-loss'}`}>
+                    {isPositive ? '+' : ''}{stock.change.toFixed(2)} ({Math.abs(stock.changePercent).toFixed(1)}%)
+                  </span>
                 </span>
               </>
             )}
