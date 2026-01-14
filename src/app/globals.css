@@ -236,10 +236,6 @@ textarea:focus-visible,
   animation: marquee 30s linear infinite;
 }
 
-.animate-marquee:hover {
-  animation-play-state: paused;
-}
-
 /* Hide TradingView attribution link in lightweight-charts */
 .tv-lightweight-charts a[href*="tradingview"],
 [class*="tv-lightweight-charts"] a,
