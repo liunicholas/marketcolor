@@ -1,10 +1,14 @@
 import YahooFinance from 'yahoo-finance2';
-import type { StockQuote, StockHistory, MarketIndex, MarketMover, NewsItem, TimeRange, HeatmapStock, HeatmapSector, ExtendedMarketIndex } from '@/types/stock';
+import type {
+  StockQuote, StockHistory, MarketIndex, MarketMover, NewsItem, TimeRange,
+  HeatmapStock, HeatmapSector, ExtendedMarketIndex,
+  AnalystData, OwnershipData, FinancialStatements, OptionsChain
+} from '@/types/stock';
 import { getSP500Constituents, SP500_CONSTITUENTS } from '@/lib/sp500-scraper';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const yahooFinance = new YahooFinance();
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 export async function getStockQuote(symbol: string): Promise<StockQuote> {
   const quote = await yahooFinance.quote(symbol) as any;
@@ -560,5 +564,188 @@ export async function getExtendedCurrencies(): Promise<ExtendedMarketIndex[]> {
     }));
   } catch {
     return [];
+  }
+}
+
+// Analyst Ratings Data
+export async function getAnalystData(symbol: string): Promise<AnalystData | null> {
+  try {
+    const result = await yahooFinance.quoteSummary(symbol, {
+      modules: ['recommendationTrend', 'upgradeDowngradeHistory'],
+    }) as any;
+
+    const recommendations = result.recommendationTrend?.trend?.map((t: any) => ({
+      period: t.period || '',
+      strongBuy: t.strongBuy || 0,
+      buy: t.buy || 0,
+      hold: t.hold || 0,
+      sell: t.sell || 0,
+      strongSell: t.strongSell || 0,
+    })) || [];
+
+    const upgradeDowngradeHistory = result.upgradeDowngradeHistory?.history?.slice(0, 20).map((h: any) => ({
+      date: h.epochGradeDate ? new Date(h.epochGradeDate * 1000).toISOString().split('T')[0] : '',
+      firm: h.firm || '',
+      toGrade: h.toGrade || '',
+      fromGrade: h.fromGrade,
+      action: h.action || '',
+    })) || [];
+
+    return { recommendations, upgradeDowngradeHistory };
+  } catch {
+    return null;
+  }
+}
+
+// Ownership Data
+export async function getOwnershipData(symbol: string): Promise<OwnershipData | null> {
+  try {
+    const result = await yahooFinance.quoteSummary(symbol, {
+      modules: ['institutionOwnership', 'insiderHolders'],
+    }) as any;
+
+    const institutionalHolders = result.institutionOwnership?.ownershipList?.slice(0, 15).map((h: any) => ({
+      organization: h.organization || '',
+      pctHeld: h.pctHeld || 0,
+      position: h.position || 0,
+      value: h.value || 0,
+      reportDate: h.reportDate ? new Date(h.reportDate).toISOString().split('T')[0] : undefined,
+    })) || [];
+
+    const insiderHolders = result.insiderHolders?.holders?.slice(0, 15).map((h: any) => ({
+      name: h.name || '',
+      relation: h.relation || '',
+      transactionDescription: h.transactionDescription,
+      latestTransDate: h.latestTransDate ? new Date(h.latestTransDate).toISOString().split('T')[0] : undefined,
+      positionDirect: h.positionDirect,
+    })) || [];
+
+    return { institutionalHolders, insiderHolders };
+  } catch {
+    return null;
+  }
+}
+
+// Financial Statements - Using fundamentalsTimeSeries (the old modules were deprecated Nov 2024)
+export async function getFinancialStatements(symbol: string): Promise<FinancialStatements | null> {
+  try {
+    // Fetch 5 years of annual data using fundamentalsTimeSeries API
+    const period1 = new Date();
+    period1.setFullYear(period1.getFullYear() - 5);
+
+    const [financials, balanceSheet, cashFlow] = await Promise.all([
+      yahooFinance.fundamentalsTimeSeries(symbol, {
+        period1,
+        type: 'annual',
+        module: 'financials',
+      }, { validateResult: false }),
+      yahooFinance.fundamentalsTimeSeries(symbol, {
+        period1,
+        type: 'annual',
+        module: 'balance-sheet',
+      }, { validateResult: false }),
+      yahooFinance.fundamentalsTimeSeries(symbol, {
+        period1,
+        type: 'annual',
+        module: 'cash-flow',
+      }, { validateResult: false }),
+    ]) as [any[], any[], any[]];
+
+    // Map financials (income statement)
+    const incomeStatementHistory = (financials || [])
+      .filter((s: any) => s.date)
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5)
+      .map((s: any) => ({
+        endDate: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
+        totalRevenue: s.totalRevenue,
+        grossProfit: s.grossProfit,
+        operatingIncome: s.operatingIncome,
+        netIncome: s.netIncome,
+        ebit: s.ebit,
+        costOfRevenue: s.costOfRevenue,
+        researchDevelopment: s.researchAndDevelopment,
+        sellingGeneralAdministrative: s.sellingGeneralAndAdministration,
+      }));
+
+    // Map balance sheet
+    const balanceSheetHistory = (balanceSheet || [])
+      .filter((s: any) => s.date)
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5)
+      .map((s: any) => ({
+        endDate: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
+        totalAssets: s.totalAssets,
+        totalLiab: s.totalLiabilitiesNetMinorityInterest,
+        totalStockholderEquity: s.stockholdersEquity,
+        cash: s.cashAndCashEquivalents,
+        shortTermInvestments: s.otherShortTermInvestments,
+        totalCurrentAssets: s.currentAssets,
+        totalCurrentLiabilities: s.currentLiabilities,
+        longTermDebt: s.longTermDebt,
+        retainedEarnings: s.retainedEarnings,
+      }));
+
+    // Map cash flow
+    const cashFlowHistory = (cashFlow || [])
+      .filter((s: any) => s.date)
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5)
+      .map((s: any) => ({
+        endDate: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
+        totalCashFromOperatingActivities: s.operatingCashFlow,
+        totalCashflowsFromInvestingActivities: s.investingCashFlow,
+        totalCashFromFinancingActivities: s.financingCashFlow,
+        capitalExpenditures: s.capitalExpenditure,
+        dividendsPaid: s.cashDividendsPaid,
+        netIncome: s.netIncome,
+        depreciation: s.depreciationAndAmortization,
+        changeInCash: s.changeInCashSupplementalAsReported,
+      }));
+
+    return { incomeStatementHistory, balanceSheetHistory, cashFlowHistory };
+  } catch (error) {
+    console.error('Financial statements error:', error);
+    return null;
+  }
+}
+
+// Options Chain
+export async function getOptionsChain(symbol: string, expiration?: string): Promise<OptionsChain | null> {
+  try {
+    const result = await yahooFinance.options(symbol, expiration ? { date: new Date(expiration) } : {}) as any;
+
+    if (!result) return null;
+
+    const expirationDates = result.expirationDates?.map((d: Date) => d.toISOString().split('T')[0]) || [];
+
+    const mapContract = (c: any, exp: string) => ({
+      strike: c.strike ?? 0,
+      lastPrice: c.lastPrice ?? 0,
+      bid: c.bid ?? 0,
+      ask: c.ask ?? 0,
+      change: c.change ?? 0,
+      percentChange: c.percentChange ?? 0,
+      volume: c.volume ?? 0,
+      openInterest: c.openInterest ?? 0,
+      impliedVolatility: c.impliedVolatility ?? 0,
+      inTheMoney: c.inTheMoney ?? false,
+      expiration: exp,
+      contractSymbol: c.contractSymbol ?? '',
+    });
+
+    const selectedExpiration = expiration || (expirationDates[0] ?? '');
+
+    const calls = result.options?.[0]?.calls?.map((c: any) => mapContract(c, selectedExpiration)) || [];
+    const puts = result.options?.[0]?.puts?.map((c: any) => mapContract(c, selectedExpiration)) || [];
+
+    return {
+      expirationDates,
+      calls,
+      puts,
+      underlyingPrice: result.quote?.regularMarketPrice || 0,
+    };
+  } catch {
+    return null;
   }
 }

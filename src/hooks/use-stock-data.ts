@@ -1,7 +1,10 @@
 'use client';
 
 import useSWR from 'swr';
-import type { StockQuote, StockHistory, NewsItem, TimeRange } from '@/types/stock';
+import type {
+  StockQuote, StockHistory, NewsItem, TimeRange,
+  AnalystData, OwnershipData, FinancialStatements, OptionsChain
+} from '@/types/stock';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -65,6 +68,75 @@ export function useStockSearch(query: string) {
 
   return {
     results: data || [],
+    error,
+    isLoading,
+  };
+}
+
+export function useAnalystData(symbol: string | null) {
+  const { data, error, isLoading } = useSWR<AnalystData>(
+    symbol ? `/api/stock/${symbol}/analysts` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  return {
+    data,
+    error,
+    isLoading,
+  };
+}
+
+export function useOwnershipData(symbol: string | null) {
+  const { data, error, isLoading } = useSWR<OwnershipData>(
+    symbol ? `/api/stock/${symbol}/ownership` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  return {
+    data,
+    error,
+    isLoading,
+  };
+}
+
+export function useFinancialStatements(symbol: string | null) {
+  const { data, error, isLoading } = useSWR<FinancialStatements>(
+    symbol ? `/api/stock/${symbol}/financials` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  return {
+    data,
+    error,
+    isLoading,
+  };
+}
+
+export function useOptionsChain(symbol: string | null, expiration?: string) {
+  const params = expiration ? `?expiration=${expiration}` : '';
+  const { data, error, isLoading } = useSWR<OptionsChain>(
+    symbol ? `/api/stock/${symbol}/options${params}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
+
+  return {
+    data,
     error,
     isLoading,
   };
