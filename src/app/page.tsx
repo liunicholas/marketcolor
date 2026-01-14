@@ -8,6 +8,7 @@ import { MarketGrid } from '@/components/market/market-grid';
 import { MoversTable } from '@/components/market/movers-table';
 import { InlineSearch } from '@/components/layout/inline-search';
 import { useFutures, useSectorETFs, useCommodities, useCurrencies } from '@/hooks/use-market-data';
+import { TodayEventsWidget } from '@/components/calendar/today-events';
 
 export default function HomePage() {
   const marketsRef = useRef<HTMLElement>(null);
@@ -52,6 +53,9 @@ export default function HomePage() {
             Real-time market data
           </p>
         </div>
+
+        {/* Today's Events Widget */}
+        <TodayEventsWidget className="mb-4" />
 
         {/* Indices and Futures Row */}
         <div className="grid lg:grid-cols-2 gap-4 mb-4">

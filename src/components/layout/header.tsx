@@ -11,6 +11,7 @@ const navItems = [
   { href: '/commodities', label: 'COMMODITIES' },
   { href: '/currencies', label: 'CURRENCIES' },
   { href: '/heatmap', label: 'HEATMAP' },
+  { href: '/calendar', label: 'CALENDAR' },
 ];
 
 export function Header() {
