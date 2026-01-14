@@ -15,9 +15,26 @@ export function Header() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [marketState, setMarketState] = useState<string>('');
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('/api/market/status');
+        const data = await res.json();
+        setMarketState(data.state);
+      } catch {
+        // Fallback to empty on error
+      }
+    };
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 60000); // Update every minute
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -73,6 +90,26 @@ export function Header() {
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
+          {/* Market Status */}
+          {mounted && marketState && (
+            <div className="hidden sm:flex items-center gap-1.5 font-mono text-xs">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  marketState === 'REGULAR' ? 'bg-gain' : 'bg-muted-foreground'
+                }`}
+              />
+              <span className="text-muted-foreground">
+                {marketState === 'REGULAR'
+                  ? 'OPEN'
+                  : marketState === 'PRE'
+                    ? 'PRE'
+                    : marketState === 'POST'
+                      ? 'AFTER'
+                      : 'CLOSED'}
+              </span>
+            </div>
+          )}
+
           {/* Search Button */}
           <Button
             variant="ghost"
