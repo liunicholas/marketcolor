@@ -52,7 +52,20 @@ export function OptionsChain({ symbol }: OptionsChainProps) {
     );
   }
 
-  const underlyingPrice = data.underlyingPrice;
+  const expirationDates = data.expirationDates || [];
+  const underlyingPrice = data.underlyingPrice || 0;
+  const calls = data.calls || [];
+  const puts = data.puts || [];
+
+  if (expirationDates.length === 0) {
+    return (
+      <div className="border border-border p-3">
+        <span className="font-mono text-xs text-muted-foreground">
+          No options data available for this security
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -63,11 +76,11 @@ export function OptionsChain({ symbol }: OptionsChainProps) {
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-muted-foreground">Expiration:</span>
             <select
-              value={selectedExpiration || data.expirationDates[0] || ''}
+              value={selectedExpiration || expirationDates[0] || ''}
               onChange={(e) => setSelectedExpiration(e.target.value)}
               className="font-mono text-xs bg-secondary/50 border border-border px-2 py-1 rounded-sm"
             >
-              {data.expirationDates.map((date) => (
+              {expirationDates.map((date) => (
                 <option key={date} value={date}>
                   {date}
                 </option>
@@ -111,8 +124,8 @@ export function OptionsChain({ symbol }: OptionsChainProps) {
               {/* Get unique strikes and merge calls/puts */}
               {(() => {
                 const strikes = [...new Set([
-                  ...data.calls.map(c => c.strike),
-                  ...data.puts.map(p => p.strike)
+                  ...calls.map(c => c.strike),
+                  ...puts.map(p => p.strike)
                 ])].sort((a, b) => a - b);
 
                 // Filter to show strikes around the current price
@@ -123,8 +136,8 @@ export function OptionsChain({ symbol }: OptionsChainProps) {
                 const strikesToShow = nearStrikes.length > 0 ? nearStrikes : strikes.slice(0, 20);
 
                 return strikesToShow.map((strike) => {
-                  const call = data.calls.find(c => c.strike === strike);
-                  const put = data.puts.find(p => p.strike === strike);
+                  const call = calls.find(c => c.strike === strike);
+                  const put = puts.find(p => p.strike === strike);
                   const isITMCall = strike < underlyingPrice;
                   const isITMPut = strike > underlyingPrice;
                   const isATM = Math.abs(strike - underlyingPrice) / underlyingPrice < 0.01;

@@ -55,10 +55,23 @@ export function OwnershipData({ symbol }: OwnershipDataProps) {
     );
   }
 
+  const hasInstitutional = data.institutionalHolders?.length > 0;
+  const hasInsiders = data.insiderHolders?.length > 0;
+
+  if (!hasInstitutional && !hasInsiders) {
+    return (
+      <div className="border border-border p-3">
+        <span className="font-mono text-xs text-muted-foreground">
+          No ownership data available for this security
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {/* Institutional Holders */}
-      {data.institutionalHolders.length > 0 && (
+      {hasInstitutional && (
         <div className="border border-border">
           <div className="px-3 py-1.5 border-b border-border bg-secondary/30">
             <span className="font-mono text-xs text-muted-foreground">
@@ -93,7 +106,7 @@ export function OwnershipData({ symbol }: OwnershipDataProps) {
       )}
 
       {/* Insider Holders */}
-      {data.insiderHolders.length > 0 && (
+      {hasInsiders && (
         <div className="border border-border">
           <div className="px-3 py-1.5 border-b border-border bg-secondary/30">
             <span className="font-mono text-xs text-muted-foreground">

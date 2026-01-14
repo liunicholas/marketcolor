@@ -32,10 +32,22 @@ export function AnalystRatings({ symbol }: AnalystRatingsProps) {
   }
 
   // Get current period recommendations (usually "0m" for current month)
-  const current = data.recommendations.find(r => r.period === '0m') || data.recommendations[0];
+  const recommendations = data.recommendations || [];
+  const upgradeHistory = data.upgradeDowngradeHistory || [];
+  const current = recommendations.find(r => r.period === '0m') || recommendations[0];
   const total = current
     ? current.strongBuy + current.buy + current.hold + current.sell + current.strongSell
     : 0;
+
+  if (!current && upgradeHistory.length === 0) {
+    return (
+      <div className="border border-border p-3">
+        <span className="font-mono text-xs text-muted-foreground">
+          No analyst data available for this security
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -115,7 +127,7 @@ export function AnalystRatings({ symbol }: AnalystRatingsProps) {
       )}
 
       {/* Upgrades/Downgrades History */}
-      {data.upgradeDowngradeHistory.length > 0 && (
+      {upgradeHistory.length > 0 && (
         <div className="border border-border">
           <div className="px-3 py-1.5 border-b border-border bg-secondary/30">
             <span className="font-mono text-xs text-muted-foreground">
@@ -123,7 +135,7 @@ export function AnalystRatings({ symbol }: AnalystRatingsProps) {
             </span>
           </div>
           <div className="divide-y divide-border">
-            {data.upgradeDowngradeHistory.slice(0, 10).map((item, i) => (
+            {upgradeHistory.slice(0, 10).map((item, i) => (
               <div
                 key={i}
                 className="flex items-center justify-between px-3 py-2 font-mono text-xs"
