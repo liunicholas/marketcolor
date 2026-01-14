@@ -50,7 +50,8 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
     );
   }
 
-  const displayMovers = movers;
+  // Unified header: SYM | NAME | MAGNITUDE (with bar) | PRICE | CHG %
+  const magnitudeHeader = isActive ? 'VOLUME' : 'CHG %';
 
   return (
     <div className="border border-border">
@@ -58,25 +59,25 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
       <div className="flex items-center px-4 py-2 border-b border-border bg-secondary/30 font-mono text-xs text-muted-foreground">
         <span className="w-16">SYM</span>
         <span className="flex-1 hidden sm:block">NAME</span>
-        {isActive ? (
-          <>
-            <span className="w-28 text-right">VOLUME</span>
-            <span className="w-20 text-right">PRICE</span>
-            <span className="w-20 text-right">CHG %</span>
-          </>
-        ) : (
-          <>
-            <span className="w-20 text-right">PRICE</span>
-            <span className="w-32 text-right">CHANGE</span>
-          </>
-        )}
+        <span className="w-24 text-right">{magnitudeHeader}</span>
+        <span className="w-20 text-right">PRICE</span>
+        <span className="w-20 text-right">{isActive ? 'CHG %' : 'CHG'}</span>
       </div>
 
       {/* Rows */}
-      {displayMovers.map((stock) => {
+      {movers.map((stock) => {
         const isPositive = stock.change >= 0;
         const percentWidth = (Math.abs(stock.changePercent) / maxPercent) * 100;
         const volumeWidth = ((stock.volume || 0) / maxVolume) * 100;
+
+        // Bar color based on type
+        const barColor = isActive
+          ? 'bg-muted-foreground/20'
+          : type === 'gainers'
+            ? 'bg-gain/20'
+            : 'bg-loss/20';
+
+        const barWidth = isActive ? volumeWidth : percentWidth;
 
         return (
           <Link
@@ -88,42 +89,37 @@ export function MoversTable({ type, limit = 10, offset = 0 }: MoversTableProps) 
             <span className="flex-1 hidden sm:block text-muted-foreground truncate pr-4">
               {stock.name}
             </span>
-            {isActive ? (
-              <>
-                {/* Volume with bar */}
-                <span className="w-28 text-right relative">
-                  <span
-                    className="absolute inset-y-0 right-0 bg-muted-foreground/20"
-                    style={{ width: `${volumeWidth}%` }}
-                  />
-                  <span className="relative font-bold text-foreground">
-                    {formatVolume(stock.volume)}
-                  </span>
-                </span>
-                <span className="w-20 text-right text-muted-foreground">
-                  ${stock.price.toFixed(2)}
-                </span>
-                <span className={`w-20 text-right ${isPositive ? 'text-gain' : 'text-loss'}`}>
-                  {isPositive ? '+' : ''}{stock.changePercent.toFixed(1)}%
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="w-20 text-right">${stock.price.toFixed(2)}</span>
-                {/* Percentage with bar */}
-                <span className="w-32 text-right relative">
-                  <span
-                    className={`absolute inset-y-0 right-0 ${
-                      type === 'gainers' ? 'bg-gain/20' : 'bg-loss/20'
-                    }`}
-                    style={{ width: `${percentWidth}%` }}
-                  />
-                  <span className={`relative ${isPositive ? 'text-gain' : 'text-loss'}`}>
-                    {isPositive ? '+' : ''}{stock.change.toFixed(2)} ({Math.abs(stock.changePercent).toFixed(1)}%)
-                  </span>
-                </span>
-              </>
-            )}
+
+            {/* Magnitude column with bar */}
+            <span className="w-24 text-right relative">
+              <span
+                className={`absolute inset-y-0 right-0 ${barColor}`}
+                style={{ width: `${barWidth}%` }}
+              />
+              <span className={`relative font-bold ${
+                isActive
+                  ? 'text-foreground'
+                  : isPositive
+                    ? 'text-gain'
+                    : 'text-loss'
+              }`}>
+                {isActive
+                  ? formatVolume(stock.volume)
+                  : `${isPositive ? '+' : ''}${stock.changePercent.toFixed(1)}%`}
+              </span>
+            </span>
+
+            {/* Price */}
+            <span className="w-20 text-right text-muted-foreground">
+              ${stock.price.toFixed(2)}
+            </span>
+
+            {/* Change */}
+            <span className={`w-20 text-right ${isPositive ? 'text-gain' : 'text-loss'}`}>
+              {isActive
+                ? `${isPositive ? '+' : ''}${stock.changePercent.toFixed(1)}%`
+                : `${isPositive ? '+' : ''}${stock.change.toFixed(2)}`}
+            </span>
           </Link>
         );
       })}
