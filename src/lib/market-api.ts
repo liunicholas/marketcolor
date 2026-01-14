@@ -1,5 +1,6 @@
 import YahooFinance from 'yahoo-finance2';
-import type { StockQuote, StockHistory, MarketIndex, MarketMover, NewsItem, TimeRange } from '@/types/stock';
+import type { StockQuote, StockHistory, MarketIndex, MarketMover, NewsItem, TimeRange, HeatmapStock, HeatmapSector } from '@/types/stock';
+import { getSP500Constituents, SP500_CONSTITUENTS } from '@/lib/sp500-scraper';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -27,6 +28,9 @@ export async function getStockQuote(symbol: string): Promise<StockQuote> {
     fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
     fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
     exchange: quote.exchange,
+    regularMarketTime: quote.regularMarketTime
+      ? new Date(quote.regularMarketTime).toISOString()
+      : undefined,
   };
 }
 
@@ -309,6 +313,100 @@ export async function getCurrencies(): Promise<MarketIndex[]> {
       changePercent: quote.regularMarketChangePercent || 0,
     }));
   } catch {
+    return [];
+  }
+}
+
+export async function getHeatmapData(): Promise<HeatmapSector[]> {
+  // Try dynamic fetch from Wikipedia, fall back to static list
+  let constituents;
+  try {
+    constituents = await getSP500Constituents();
+  } catch (error) {
+    console.warn('[Heatmap] Wikipedia fetch failed, using static list:', error);
+    constituents = SP500_CONSTITUENTS;
+  }
+
+  const symbols = constituents.map(s => s.symbol);
+  const stockMap = new Map(constituents.map(s => [s.symbol, s]));
+
+  // Batch requests (100 symbols per batch)
+  const BATCH_SIZE = 100;
+  const batches: string[][] = [];
+  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+    batches.push(symbols.slice(i, i + BATCH_SIZE));
+  }
+
+  try {
+    // Fetch all batches in parallel, handling partial failures
+    const results = await Promise.allSettled(
+      batches.map(batch => yahooFinance.quote(batch, { return: 'array' }))
+    );
+
+    // Flatten successful results, skip failed batches
+    const quotes: any[] = [];
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        const data = result.value;
+        if (Array.isArray(data)) {
+          quotes.push(...data);
+        } else if (data) {
+          quotes.push(data);
+        }
+      } else {
+        console.warn(`Batch ${index} failed:`, result.reason?.message || result.reason);
+      }
+    });
+
+    // Initialize sector map from the constituents (handles dynamic Wikipedia data)
+    const sectorMap = new Map<string, HeatmapStock[]>();
+    const uniqueSectors = [...new Set(constituents.map(s => s.sector))];
+    uniqueSectors.forEach(sector => sectorMap.set(sector, []));
+
+    // Group stocks by sector
+    quotes.forEach((quote: any) => {
+      if (!quote?.symbol) return;
+      const stockInfo = stockMap.get(quote.symbol);
+      if (!stockInfo) return;
+
+      // Skip stocks without market cap
+      const marketCap = quote.marketCap;
+      if (!marketCap || marketCap <= 0) return;
+
+      const stock: HeatmapStock = {
+        symbol: quote.symbol,
+        name: stockInfo.name,
+        sector: stockInfo.sector,
+        price: quote.regularMarketPrice || 0,
+        change: quote.regularMarketChange || 0,
+        changePercent: quote.regularMarketChangePercent || 0,
+        marketCap,
+      };
+
+      sectorMap.get(stockInfo.sector)?.push(stock);
+    });
+
+    // Sort stocks within each sector by market cap (largest first)
+    sectorMap.forEach(stocks => {
+      stocks.sort((a, b) => b.marketCap - a.marketCap);
+    });
+
+    // Convert to array format for treemap, sorted by total sector market cap
+    const sectors = uniqueSectors.map(sector => ({
+      name: sector,
+      children: sectorMap.get(sector) || [],
+    }));
+
+    // Sort sectors by total market cap
+    sectors.sort((a, b) => {
+      const aTotal = a.children.reduce((sum, s) => sum + s.marketCap, 0);
+      const bTotal = b.children.reduce((sum, s) => sum + s.marketCap, 0);
+      return bTotal - aTotal;
+    });
+
+    return sectors;
+  } catch (error) {
+    console.error('Error fetching heatmap data:', error);
     return [];
   }
 }

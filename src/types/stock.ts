@@ -21,6 +21,7 @@ export interface StockQuote {
   sector?: string;
   website?: string;
   description?: string;
+  regularMarketTime?: string;
 }
 
 export interface StockHistory {
@@ -77,3 +78,18 @@ export interface InvestmentThesis {
 }
 
 export type TimeRange = '1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '5Y';
+
+export interface HeatmapStock {
+  symbol: string;
+  name: string;
+  sector: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  marketCap: number;
+}
+
+export interface HeatmapSector {
+  name: string;
+  children: HeatmapStock[];
+}

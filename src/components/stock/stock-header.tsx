@@ -36,16 +36,29 @@ export function StockHeader({ quote, isLoading }: StockHeaderProps) {
         </div>
 
         {/* Price & Change */}
-        <div className="flex items-baseline gap-4 font-mono">
-          <span className="text-2xl font-bold">
-            ${quote.price.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </span>
-          <span className={isPositive ? 'text-gain' : 'text-loss'}>
-            {isPositive ? '▲' : '▼'} {isPositive ? '+' : ''}{quote.change.toFixed(2)} ({isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%)
-          </span>
+        <div className="font-mono sm:text-right">
+          <div className="flex items-baseline gap-4">
+            <span className="text-2xl font-bold">
+              ${quote.price.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+            <span className={isPositive ? 'text-gain' : 'text-loss'}>
+              {isPositive ? '▲' : '▼'} {isPositive ? '+' : ''}{quote.change.toFixed(2)} ({isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%)
+            </span>
+          </div>
+          {quote.regularMarketTime && (
+            <div className="text-xs text-muted-foreground mt-1">
+              As of {new Date(quote.regularMarketTime).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+                timeZone: 'America/New_York',
+              })} ET
+            </div>
+          )}
         </div>
       </div>
 

@@ -9,6 +9,7 @@ const navItems = [
   { href: '/', label: 'HOME' },
   { href: '/#markets', label: 'MARKETS' },
   { href: '/#movers', label: 'MOVERS' },
+  { href: '/heatmap', label: 'HEATMAP' },
 ];
 
 export function Header() {

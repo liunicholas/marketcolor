@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import type { MarketIndex, MarketMover } from '@/types/stock';
+import type { MarketIndex, MarketMover, HeatmapSector } from '@/types/stock';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -108,6 +108,24 @@ export function useCurrencies() {
 
   return {
     currencies: data || [],
+    error,
+    isLoading,
+    refresh: mutate,
+  };
+}
+
+export function useHeatmapData() {
+  const { data, error, isLoading, mutate } = useSWR<HeatmapSector[]>(
+    '/api/market/heatmap',
+    fetcher,
+    {
+      refreshInterval: 300000, // Refresh every 5 minutes
+      revalidateOnFocus: true,
+    }
+  );
+
+  return {
+    sectors: data || [],
     error,
     isLoading,
     refresh: mutate,
