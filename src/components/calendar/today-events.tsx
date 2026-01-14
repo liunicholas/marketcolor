@@ -61,9 +61,15 @@ export function TodayEventsWidget({ className }: TodayEventsWidgetProps) {
               >
                 <span className="text-muted-foreground">{formatHour(event.hour)}</span>
                 <span className="text-foreground">{event.symbol}</span>
-                {event.epsEstimate != null && (
+                {(event.epsEstimate != null || event.epsActual != null) && (
                   <span className="text-muted-foreground">
-                    Est: ${event.epsEstimate.toFixed(2)}
+                    {event.epsEstimate != null && <>Est: ${event.epsEstimate.toFixed(2)}</>}
+                    {event.epsActual != null && (
+                      <>
+                        {event.epsEstimate != null && ' → '}
+                        <span className="text-foreground">${event.epsActual.toFixed(2)}</span>
+                      </>
+                    )}
                   </span>
                 )}
               </Link>

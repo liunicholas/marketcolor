@@ -47,13 +47,15 @@ export function EventItem({ event, compact = false }: EventItemProps) {
       {/* EPS estimate/actual */}
       {(event.epsActual != null || event.epsEstimate != null) && (
         <span className="font-mono text-xs text-muted-foreground flex-shrink-0">
-          {event.epsActual != null ? (
-            <>
-              EPS: <span className="text-foreground">${event.epsActual.toFixed(2)}</span>
-            </>
-          ) : event.epsEstimate != null ? (
+          {event.epsEstimate != null && (
             <>Est: ${event.epsEstimate.toFixed(2)}</>
-          ) : null}
+          )}
+          {event.epsActual != null && (
+            <>
+              {event.epsEstimate != null && ' → '}
+              <span className="text-foreground">${event.epsActual.toFixed(2)}</span>
+            </>
+          )}
         </span>
       )}
     </div>
