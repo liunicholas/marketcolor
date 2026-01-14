@@ -9,14 +9,29 @@ interface MarketGridProps {
   isLoading?: boolean;
   error?: Error | null;
   columns?: 2 | 4;
+  href?: string;
 }
 
-export function MarketGrid({ title, items, isLoading, error, columns = 4 }: MarketGridProps) {
+export function MarketGrid({ title, items, isLoading, error, columns = 4, href }: MarketGridProps) {
+  const HeaderContent = () => (
+    href ? (
+      <Link
+        href={href}
+        className="flex items-center gap-2 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors group"
+      >
+        <span>{title}</span>
+        <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+      </Link>
+    ) : (
+      <span className="font-mono text-xs text-muted-foreground">{title}</span>
+    )
+  );
+
   if (error) {
     return (
       <div className="border border-border">
         <div className="px-4 py-2 border-b border-border bg-secondary/30">
-          <span className="font-mono text-xs text-muted-foreground">{title}</span>
+          <HeaderContent />
         </div>
         <div className="p-4">
           <p className="text-sm text-muted-foreground font-mono">ERROR: Failed to load</p>
@@ -29,7 +44,7 @@ export function MarketGrid({ title, items, isLoading, error, columns = 4 }: Mark
     return (
       <div className="border border-border">
         <div className="px-4 py-2 border-b border-border bg-secondary/30">
-          <span className="font-mono text-xs text-muted-foreground">{title}</span>
+          <HeaderContent />
         </div>
         <div className={`grid ${columns === 4 ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2'} gap-px bg-border`}>
           {Array.from({ length: columns }).map((_, i) => (
@@ -47,7 +62,7 @@ export function MarketGrid({ title, items, isLoading, error, columns = 4 }: Mark
   return (
     <div className="border border-border">
       <div className="px-4 py-2 border-b border-border bg-secondary/30">
-        <span className="font-mono text-xs text-muted-foreground">{title}</span>
+        <HeaderContent />
       </div>
       <div className={`grid ${columns === 4 ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2'} gap-px bg-border`}>
         {items.map((item) => {

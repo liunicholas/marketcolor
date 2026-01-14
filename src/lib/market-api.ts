@@ -1,5 +1,5 @@
 import YahooFinance from 'yahoo-finance2';
-import type { StockQuote, StockHistory, MarketIndex, MarketMover, NewsItem, TimeRange, HeatmapStock, HeatmapSector } from '@/types/stock';
+import type { StockQuote, StockHistory, MarketIndex, MarketMover, NewsItem, TimeRange, HeatmapStock, HeatmapSector, ExtendedMarketIndex } from '@/types/stock';
 import { getSP500Constituents, SP500_CONSTITUENTS } from '@/lib/sp500-scraper';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -407,6 +407,158 @@ export async function getHeatmapData(): Promise<HeatmapSector[]> {
     return sectors;
   } catch (error) {
     console.error('Error fetching heatmap data:', error);
+    return [];
+  }
+}
+
+// Helper to get 5-day sparkline data for multiple symbols
+async function getSparklineData(symbols: string[]): Promise<Map<string, number[]>> {
+  const sparklineMap = new Map<string, number[]>();
+
+  const period1 = new Date();
+  period1.setDate(period1.getDate() - 7); // 7 days to ensure 5 trading days
+
+  try {
+    const results = await Promise.allSettled(
+      symbols.map(symbol =>
+        yahooFinance.chart(symbol, {
+          period1,
+          interval: '1d',
+        })
+      )
+    );
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        const data = result.value as any;
+        if (data?.quotes?.length > 0) {
+          const closes = data.quotes
+            .filter((q: any) => q.close !== null && q.close !== undefined)
+            .slice(-5) // Last 5 data points
+            .map((q: any) => q.close);
+          if (closes.length > 1) {
+            sparklineMap.set(symbols[index], closes);
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching sparkline data:', error);
+  }
+
+  return sparklineMap;
+}
+
+export async function getExtendedSectorETFs(): Promise<ExtendedMarketIndex[]> {
+  const symbols = [
+    { symbol: 'XLK', name: 'Technology', category: 'sector' },
+    { symbol: 'XLF', name: 'Financials', category: 'sector' },
+    { symbol: 'XLE', name: 'Energy', category: 'sector' },
+    { symbol: 'XLV', name: 'Healthcare', category: 'sector' },
+    { symbol: 'XLY', name: 'Consumer Discretionary', category: 'sector' },
+    { symbol: 'XLP', name: 'Consumer Staples', category: 'sector' },
+    { symbol: 'XLI', name: 'Industrials', category: 'sector' },
+    { symbol: 'XLU', name: 'Utilities', category: 'sector' },
+    { symbol: 'XLB', name: 'Materials', category: 'sector' },
+    { symbol: 'XLRE', name: 'Real Estate', category: 'sector' },
+    { symbol: 'XLC', name: 'Communication Services', category: 'sector' },
+  ];
+
+  try {
+    const [quotes, sparklines] = await Promise.all([
+      yahooFinance.quote(symbols.map(s => s.symbol)) as Promise<any[]>,
+      getSparklineData(symbols.map(s => s.symbol)),
+    ]);
+
+    return quotes.map((quote: any, index: number) => ({
+      symbol: symbols[index].symbol,
+      name: symbols[index].name,
+      price: quote.regularMarketPrice || 0,
+      change: quote.regularMarketChange || 0,
+      changePercent: quote.regularMarketChangePercent || 0,
+      category: symbols[index].category,
+      sparkline: sparklines.get(symbols[index].symbol),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getExtendedCommodities(): Promise<ExtendedMarketIndex[]> {
+  const symbols = [
+    // Metals
+    { symbol: 'GC=F', name: 'Gold', category: 'metals' },
+    { symbol: 'SI=F', name: 'Silver', category: 'metals' },
+    { symbol: 'HG=F', name: 'Copper', category: 'metals' },
+    { symbol: 'PL=F', name: 'Platinum', category: 'metals' },
+    // Energy
+    { symbol: 'CL=F', name: 'Crude Oil', category: 'energy' },
+    { symbol: 'NG=F', name: 'Natural Gas', category: 'energy' },
+    { symbol: 'RB=F', name: 'Gasoline', category: 'energy' },
+    { symbol: 'HO=F', name: 'Heating Oil', category: 'energy' },
+    // Agriculture
+    { symbol: 'ZC=F', name: 'Corn', category: 'agriculture' },
+    { symbol: 'ZS=F', name: 'Soybeans', category: 'agriculture' },
+    { symbol: 'ZW=F', name: 'Wheat', category: 'agriculture' },
+    { symbol: 'KC=F', name: 'Coffee', category: 'agriculture' },
+    { symbol: 'CT=F', name: 'Cotton', category: 'agriculture' },
+  ];
+
+  try {
+    const [quotes, sparklines] = await Promise.all([
+      yahooFinance.quote(symbols.map(s => s.symbol)) as Promise<any[]>,
+      getSparklineData(symbols.map(s => s.symbol)),
+    ]);
+
+    return quotes.map((quote: any, index: number) => ({
+      symbol: symbols[index].symbol,
+      name: symbols[index].name,
+      price: quote.regularMarketPrice || 0,
+      change: quote.regularMarketChange || 0,
+      changePercent: quote.regularMarketChangePercent || 0,
+      category: symbols[index].category,
+      sparkline: sparklines.get(symbols[index].symbol),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getExtendedCurrencies(): Promise<ExtendedMarketIndex[]> {
+  const symbols = [
+    // Majors
+    { symbol: 'EURUSD=X', name: 'EUR/USD', category: 'majors' },
+    { symbol: 'GBPUSD=X', name: 'GBP/USD', category: 'majors' },
+    { symbol: 'USDJPY=X', name: 'USD/JPY', category: 'majors' },
+    { symbol: 'USDCHF=X', name: 'USD/CHF', category: 'majors' },
+    { symbol: 'AUDUSD=X', name: 'AUD/USD', category: 'majors' },
+    { symbol: 'USDCAD=X', name: 'USD/CAD', category: 'majors' },
+    { symbol: 'NZDUSD=X', name: 'NZD/USD', category: 'majors' },
+    // Crosses
+    { symbol: 'EURGBP=X', name: 'EUR/GBP', category: 'crosses' },
+    { symbol: 'EURJPY=X', name: 'EUR/JPY', category: 'crosses' },
+    { symbol: 'GBPJPY=X', name: 'GBP/JPY', category: 'crosses' },
+    // Emerging
+    { symbol: 'USDCNH=X', name: 'USD/CNH', category: 'emerging' },
+    { symbol: 'USDINR=X', name: 'USD/INR', category: 'emerging' },
+  ];
+
+  try {
+    const [quotes, sparklines] = await Promise.all([
+      yahooFinance.quote(symbols.map(s => s.symbol)) as Promise<any[]>,
+      getSparklineData(symbols.map(s => s.symbol)),
+    ]);
+
+    return quotes.map((quote: any, index: number) => ({
+      symbol: symbols[index].symbol,
+      name: symbols[index].name,
+      price: quote.regularMarketPrice || 0,
+      change: quote.regularMarketChange || 0,
+      changePercent: quote.regularMarketChangePercent || 0,
+      category: symbols[index].category,
+      sparkline: sparklines.get(symbols[index].symbol),
+    }));
+  } catch {
     return [];
   }
 }

@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 
 const navItems = [
   { href: '/', label: 'HOME' },
-  { href: '/#markets', label: 'MARKETS' },
-  { href: '/#movers', label: 'MOVERS' },
+  { href: '/sectors', label: 'SECTORS' },
+  { href: '/commodities', label: 'COMMODITIES' },
+  { href: '/currencies', label: 'CURRENCIES' },
   { href: '/heatmap', label: 'HEATMAP' },
 ];
 

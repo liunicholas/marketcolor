@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getSectorETFs } from '@/lib/market-api';
+import { getSectorETFs, getExtendedSectorETFs } from '@/lib/market-api';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const sectors = await getSectorETFs();
+    const { searchParams } = new URL(request.url);
+    const extended = searchParams.get('extended') === 'true';
+
+    const sectors = extended
+      ? await getExtendedSectorETFs()
+      : await getSectorETFs();
     return NextResponse.json(sectors);
   } catch (error) {
     console.error('Error fetching sector ETFs:', error);

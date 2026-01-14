@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import type { MarketIndex, MarketMover, HeatmapSector } from '@/types/stock';
+import type { MarketIndex, MarketMover, HeatmapSector, ExtendedMarketIndex } from '@/types/stock';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -126,6 +126,60 @@ export function useHeatmapData() {
 
   return {
     sectors: data || [],
+    error,
+    isLoading,
+    refresh: mutate,
+  };
+}
+
+export function useExtendedSectorETFs() {
+  const { data, error, isLoading, mutate } = useSWR<ExtendedMarketIndex[]>(
+    '/api/market/sectors?extended=true',
+    fetcher,
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: true,
+    }
+  );
+
+  return {
+    sectors: data || [],
+    error,
+    isLoading,
+    refresh: mutate,
+  };
+}
+
+export function useExtendedCommodities() {
+  const { data, error, isLoading, mutate } = useSWR<ExtendedMarketIndex[]>(
+    '/api/market/commodities?extended=true',
+    fetcher,
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: true,
+    }
+  );
+
+  return {
+    commodities: data || [],
+    error,
+    isLoading,
+    refresh: mutate,
+  };
+}
+
+export function useExtendedCurrencies() {
+  const { data, error, isLoading, mutate } = useSWR<ExtendedMarketIndex[]>(
+    '/api/market/currencies?extended=true',
+    fetcher,
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: true,
+    }
+  );
+
+  return {
+    currencies: data || [],
     error,
     isLoading,
     refresh: mutate,

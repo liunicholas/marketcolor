@@ -41,6 +41,11 @@ export interface MarketIndex {
   changePercent: number;
 }
 
+export interface ExtendedMarketIndex extends MarketIndex {
+  category?: string;
+  sparkline?: number[];
+}
+
 export interface MarketMover {
   symbol: string;
   name: string;

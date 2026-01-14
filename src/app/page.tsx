@@ -74,6 +74,7 @@ export default function HomePage() {
         <div className="mb-4">
           <MarketGrid
             title="SECTOR ETFs"
+            href="/sectors"
             items={sectors}
             isLoading={sectorsLoading}
             error={sectorsError}
@@ -85,6 +86,7 @@ export default function HomePage() {
         <div className="grid lg:grid-cols-2 gap-4">
           <MarketGrid
             title="COMMODITIES"
+            href="/commodities"
             items={commodities}
             isLoading={commoditiesLoading}
             error={commoditiesError}
@@ -92,6 +94,7 @@ export default function HomePage() {
           />
           <MarketGrid
             title="CURRENCIES"
+            href="/currencies"
             items={currencies}
             isLoading={currenciesLoading}
             error={currenciesError}
