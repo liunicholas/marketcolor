@@ -9,9 +9,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json([]);
   }
 
+  // Cache headers for faster subsequent requests
+  const cacheHeaders = {
+    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+  };
+
   try {
     const results = await searchStocks(query);
-    return NextResponse.json(results);
+    return NextResponse.json(results, { headers: cacheHeaders });
   } catch (error) {
     console.error('Search API error:', error);
     return NextResponse.json(

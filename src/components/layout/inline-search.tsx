@@ -22,7 +22,7 @@ export function InlineSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedQuery = useDebounce(query, 150);
   const { results, isLoading } = useStockSearch(debouncedQuery);
 
   const displayResults = query.length > 0 ? results : popularStocks;
@@ -102,6 +102,10 @@ export function InlineSearch() {
           onFocus={() => setIsFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search symbol or company..."
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           className="w-full h-10 px-4 font-mono text-sm bg-background border border-border focus:border-muted-foreground outline-none placeholder:text-muted-foreground"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">

@@ -207,19 +207,36 @@ export async function getCompanyNews(symbol: string): Promise<NewsItem[]> {
   }
 }
 
+// Search cache with 5-minute TTL for faster repeated queries
+const searchCache = new Map<string, { data: { symbol: string; name: string }[]; timestamp: number }>();
+const SEARCH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function searchStocks(query: string): Promise<{ symbol: string; name: string }[]> {
+  const cacheKey = query.toLowerCase().trim();
+
+  // Check cache first
+  const cached = searchCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_TTL) {
+    return cached.data;
+  }
+
   try {
     const result = await yahooFinance.search(query, { quotesCount: 10 }) as any;
 
     if (!result.quotes) return [];
 
-    return result.quotes
+    const data = result.quotes
       .filter((q: any) => q.isYahooFinance && (q.quoteType === 'EQUITY' || q.quoteType === 'ETF'))
       .slice(0, 8)
       .map((q: any) => ({
         symbol: q.symbol,
         name: q.shortname || q.longname || q.symbol,
       }));
+
+    // Cache the result
+    searchCache.set(cacheKey, { data, timestamp: Date.now() });
+
+    return data;
   } catch {
     return [];
   }
