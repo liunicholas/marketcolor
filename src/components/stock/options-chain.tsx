@@ -1,8 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useOptionsChain } from '@/hooks/use-stock-data';
 import { cn } from '@/lib/utils';
+
+interface ExpirationDropdownProps {
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}
+
+function ExpirationDropdown({ value, options, onChange }: ExpirationDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="font-mono text-xs bg-background border border-border px-2 py-1 text-foreground cursor-pointer hover:bg-secondary/30 focus:outline-none flex items-center gap-2"
+      >
+        <span>{value}</span>
+        <svg
+          className={cn("w-3 h-3 text-muted-foreground transition-transform", isOpen && "rotate-180")}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-1 border border-border bg-background z-50 max-h-[200px] overflow-y-auto min-w-[120px]">
+          {options.map((option) => (
+            <button
+              key={option}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "w-full px-3 py-1.5 font-mono text-xs text-left hover:bg-secondary/50",
+                option === value && "bg-secondary"
+              )}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface OptionsChainProps {
   symbol: string;
@@ -75,22 +137,11 @@ export function OptionsChain({ symbol }: OptionsChainProps) {
           <span className="font-mono text-xs text-muted-foreground">OPTIONS CHAIN</span>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-muted-foreground">Expiration:</span>
-            <select
+            <ExpirationDropdown
               value={selectedExpiration || expirationDates[0] || ''}
-              onChange={(e) => setSelectedExpiration(e.target.value)}
-              className="font-mono text-xs bg-background border border-border px-2 py-1 text-foreground cursor-pointer hover:bg-secondary/30 focus:outline-none appearance-none pr-6"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 6px center',
-              }}
-            >
-              {expirationDates.map((date) => (
-                <option key={date} value={date} className="bg-background text-foreground">
-                  {date}
-                </option>
-              ))}
-            </select>
+              options={expirationDates}
+              onChange={setSelectedExpiration}
+            />
           </div>
         </div>
 
