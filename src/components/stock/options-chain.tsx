@@ -78,10 +78,15 @@ export function OptionsChain({ symbol }: OptionsChainProps) {
             <select
               value={selectedExpiration || expirationDates[0] || ''}
               onChange={(e) => setSelectedExpiration(e.target.value)}
-              className="font-mono text-xs bg-secondary/50 border border-border px-2 py-1 rounded-sm"
+              className="font-mono text-xs bg-background border border-border px-2 py-1 text-foreground cursor-pointer hover:bg-secondary/30 focus:outline-none appearance-none pr-6"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 6px center',
+              }}
             >
               {expirationDates.map((date) => (
-                <option key={date} value={date}>
+                <option key={date} value={date} className="bg-background text-foreground">
                   {date}
                 </option>
               ))}
