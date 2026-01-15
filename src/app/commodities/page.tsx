@@ -153,7 +153,13 @@ export default function CommoditiesPage() {
               </thead>
               <tbody>
                 {[...commodities]
-                  .sort((a, b) => b.changePercent - a.changePercent)
+                  .sort((a, b) => {
+                    // Sort by category first, then by change percent within category
+                    if (a.category !== b.category) {
+                      return (a.category || '').localeCompare(b.category || '');
+                    }
+                    return b.changePercent - a.changePercent;
+                  })
                   .map((commodity) => {
                     const isPositive = commodity.change >= 0;
                     return (

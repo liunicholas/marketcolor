@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ const navItems = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -79,16 +81,23 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => handleNavClick(item.href)}
-              className="font-mono text-xs tracking-wide text-muted-foreground hover:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = item.href === '/'
+              ? pathname === '/'
+              : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => handleNavClick(item.href)}
+                className={`font-mono text-xs tracking-wide hover:text-foreground ${
+                  isActive ? 'text-foreground' : 'text-muted-foreground'
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right Section */}
@@ -164,16 +173,23 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container mx-auto px-4 py-2 flex flex-col">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => handleNavClick(item.href)}
-                className="py-2 font-mono text-xs tracking-wide text-muted-foreground hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = item.href === '/'
+                ? pathname === '/'
+                : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => handleNavClick(item.href)}
+                  className={`py-2 font-mono text-xs tracking-wide hover:text-foreground ${
+                    isActive ? 'text-foreground' : 'text-muted-foreground'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       )}
