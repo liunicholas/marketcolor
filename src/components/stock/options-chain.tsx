@@ -44,7 +44,7 @@ function ExpirationDropdown({ value, options, onChange }: ExpirationDropdownProp
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 border border-border bg-background z-50 max-h-[200px] overflow-y-auto min-w-[120px]">
+        <div className="absolute top-full left-0 mt-1 border border-border bg-background z-50 max-h-[200px] overflow-y-auto min-w-full">
           {options.map((option) => (
             <button
               key={option}
